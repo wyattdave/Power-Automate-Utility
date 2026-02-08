@@ -1,0 +1,195 @@
+{
+    "api": {
+        "type": "ApiConnection",
+        "inputs": {
+            "host": {
+                "connection": {
+                    "name": "@parameters('$connections')['service']['connectionId']"
+                }
+            },
+            "method": "post",
+            "body": {
+                "Field1": "Value"
+            },
+            "path": "/v2/actions/..."
+        },
+        "runAfter": {
+            "Previous_Action": [
+                "Succeeded"
+            ]
+        }
+    },
+    "Compose": {
+        "runAfter": {},
+        "metadata": {
+            "operationMetadataId": "6063a4bc-73b8-4bc2-b84b-d73c4f79c51c"
+        },
+        "type": "Compose",
+        "inputs": ""
+    },
+    "Apply_to_each_interview_form": {
+        "foreach": "",
+        "actions": {},
+        "runAfter": {
+            "Condition": [
+                "Succeeded"
+            ]
+        },
+        "type": "Foreach"
+    },
+    "Filter_array_passed": {
+        "runAfter": {
+            "Delay": [
+                "Succeeded"
+            ]
+        },
+        "type": "Query",
+        "inputs": {
+            "from": "",
+            "where": ""
+        }
+    },
+    "Condition": {
+        "actions": {},
+        "runAfter": {
+            "Switch": [
+                "Succeeded"
+            ]
+        },
+        "else": {
+            "actions": {}
+        },
+        "expression": {
+            "and": [
+                {
+                    "equals": [
+                        "",
+                        ""
+                    ]
+                }
+            ]
+        },
+        "type": "If"
+    },
+    "Switch": {
+        "runAfter": {
+            "Filter_array_passed": [
+                "Succeeded"
+            ]
+        },
+        "cases": {
+            "Case": {
+                "case": "",
+                "actions": {}
+            }
+        },
+        "default": {
+            "actions": {}
+        },
+        "expression": "",
+        "type": "Switch"
+    },
+    "Do_until": {
+        "actions": {},
+        "runAfter": {
+            "Apply_to_each_interview_form": [
+                "Succeeded"
+            ]
+        },
+        "expression": "",
+        "limit": {
+            "count": 60,
+            "timeout": "PT1H"
+        },
+        "type": "Until"
+    },
+    "Initialize_variable": {
+        "runAfter": {},
+        "type": "InitializeVariable",
+        "inputs": {
+            "variables": [
+                {
+                    "name": "ss",
+                    "type": "boolean"
+                }
+            ]
+        }
+    },
+    "Set_variable": {
+        "runAfter": {
+            "Initialize_variable": [
+                "Succeeded"
+            ]
+        },
+        "type": "SetVariable",
+        "inputs": {
+            "name": "",
+            "value": ""
+        }
+    },
+    "Delay": {
+        "runAfter": {
+            "HTTP": [
+                "Succeeded"
+            ]
+        },
+        "type": "Wait",
+        "inputs": {
+            "interval": {
+                "count": 1,
+                "unit": "Minute"
+            }
+        }
+    },
+    "Terminate": {
+        "runAfter": {
+            "Set_variable": [
+                "Succeeded"
+            ]
+        },
+        "type": "Terminate",
+        "inputs": {
+            "runStatus": "Failed"
+        }
+    },
+    "Scope": {
+        "actions": {},
+        "runAfter": {
+            "Select": [
+                "Succeeded"
+            ]
+        },
+        "type": "Scope"
+    },
+    "Select": {
+        "runAfter": {
+            "Terminate": [
+                "Succeeded"
+            ]
+        },
+        "type": "Select",
+        "inputs": {
+            "from": "",
+            "select": {
+                "": ""
+            }
+        }
+    },
+    "HTTP": {
+        "runAfter": {
+            "Scope": [
+                "Succeeded"
+            ]
+        },
+        "type": "Http",
+        "inputs": {
+            "uri": "",
+            "method": "GET"
+        },
+        "runtimeConfiguration": {
+            "contentTransfer": {
+                "transferMode": "Chunked"
+            }
+        }
+    }
+}

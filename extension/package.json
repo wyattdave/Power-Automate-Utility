@@ -1,6 +1,6 @@
 {
-  "name": "power-automate-intellisense",
-  "displayName": "Flow IntelliSense - Power Automate and Logic App Expression Functions",
+  "name": "power-automate-utility",
+  "displayName": "Power Automate Utility",
   "description": "IntelliSense for Power Automate and Logic App expressions, either in blank text files to help with UI or custom definition.json files",
   "version": "0.1.0",
   "publisher": "Power DevBox",
@@ -22,19 +22,19 @@
     "commands": [
       {
         "command": "flowIntelliSense.showInfo",
-        "title": "Flow IntelliSense: Show Function Count"
+        "title": "Power Automate Utility: Show Function Count"
       },
       {
         "command": "flowIntelliSense.viewSkillFile",
-        "title": "Flow IntelliSense: View Skill File"
+        "title": "Power Automate Utility: View Skill File"
       },
       {
         "command": "flowIntelliSense.deleteSkillFile",
-        "title": "Flow IntelliSense: Delete Skill File"
+        "title": "Power Automate Utility: Delete Skill File"
       }
     ],
     "configuration": {
-      "title": "Flow IntelliSense",
+      "title": "Power Automate Utility",
       "properties": {
         "flowIntelliSense.referencePath": {
           "type": "string",

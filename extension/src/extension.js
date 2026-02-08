@@ -16,21 +16,21 @@ let aDisposables = [];
 function activate(oContext) {
     const sRefPath = resolveReferencePath(oContext);
     if (!sRefPath) {
-        vscode.window.showErrorMessage("Flow IntelliSense: Could not find expression-functions-reference.md");
+        vscode.window.showErrorMessage("Power Automate Utility: Could not find expression-functions-reference.md");
         return;
     }
 
     let aFunctions = [];
     try {
         aFunctions = parseFunctionReference(sRefPath);
-        console.log("Flow IntelliSense: Parsed " + aFunctions.length + " functions from reference file");
+        console.log("Power Automate Utility: Parsed " + aFunctions.length + " functions from reference file");
     } catch (oError) {
-        vscode.window.showErrorMessage("Flow IntelliSense: Error parsing reference file - " + oError.message);
+        vscode.window.showErrorMessage("Power Automate Utility: Error parsing reference file - " + oError.message);
         return;
     }
 
     if (aFunctions.length === 0) {
-        vscode.window.showWarningMessage("Flow IntelliSense: No functions found in reference file");
+        vscode.window.showWarningMessage("Power Automate Utility: No functions found in reference file");
         return;
     }
 
@@ -75,7 +75,7 @@ function activate(oContext) {
     // Register a command to show function count
     const oInfoCommand = vscode.commands.registerCommand("flowIntelliSense.showInfo", function () {
         vscode.window.showInformationMessage(
-            "Flow IntelliSense: " + aFunctions.length + " Logic App expression functions loaded"
+            "Power Automate Utility: " + aFunctions.length + " Logic App expression functions loaded"
         );
     });
     oContext.subscriptions.push(oInfoCommand);
@@ -101,7 +101,7 @@ function activate(oContext) {
         oContext.globalState.update(sInstallFlagKey, true);
     }
 
-    //vscode.window.showInformationMessage("Flow IntelliSense: Loaded " + aFunctions.length + " expression functions");
+    //vscode.window.showInformationMessage("Power Automate Utility: Loaded " + aFunctions.length + " expression functions");
 }
 
 /**
@@ -166,7 +166,7 @@ function viewSkillFile(oContext) {
         const oUri = vscode.Uri.file(sFilePath);
         vscode.commands.executeCommand("markdown.showPreview", oUri);
     } else {
-        vscode.window.showErrorMessage("Flow IntelliSense: SKILL.md file not found");
+        vscode.window.showErrorMessage("Power Automate Utility: SKILL.md file not found");
     }
 }
 
@@ -180,7 +180,7 @@ function installSkillFile(oContext) {
     try {
         const sSourcePath = path.join(oContext.extensionPath, "src", "skill.md");
         if (!fileExists(sSourcePath)) {
-            console.log("Flow IntelliSense: skill.md not found at " + sSourcePath);
+            console.log("Power Automate Utility: skill.md not found at " + sSourcePath);
             return;
         }
 
@@ -194,10 +194,10 @@ function installSkillFile(oContext) {
         }
 
         fs.copyFileSync(sSourcePath, sDestPath);
-        console.log("Flow IntelliSense: Installed SKILL.md to " + sDestPath);
-        vscode.window.showInformationMessage("Flow IntelliSense: Copilot skill installed to " + sDestPath);
+        console.log("Power Automate Utility: Installed SKILL.md to " + sDestPath);
+        vscode.window.showInformationMessage("Power Automate Utility: Copilot skill installed to " + sDestPath);
     } catch (oError) {
-        console.error("Flow IntelliSense: Failed to install SKILL.md - " + oError.message);
+        console.error("Power Automate Utility: Failed to install SKILL.md - " + oError.message);
     }
 }
 
@@ -213,17 +213,17 @@ function deleteSkillFile(oContext) {
         const sDestPath = path.join(sDestDir, "SKILL.md");
 
         if (!fileExists(sDestPath)) {
-            vscode.window.showInformationMessage("Flow IntelliSense: SKILL.md is not installed");
+            vscode.window.showInformationMessage("Power Automate Utility: SKILL.md is not installed");
             return;
         }
 
         fs.unlinkSync(sDestPath);
         oContext.globalState.update("bSkillFileInstalled", false);
-        console.log("Flow IntelliSense: Deleted SKILL.md from " + sDestPath);
-        vscode.window.showInformationMessage("Flow IntelliSense: Copilot skill removed from " + sDestPath);
+        console.log("Power Automate Utility: Deleted SKILL.md from " + sDestPath);
+        vscode.window.showInformationMessage("Power Automate Utility: Copilot skill removed from " + sDestPath);
     } catch (oError) {
-        console.error("Flow IntelliSense: Failed to delete SKILL.md - " + oError.message);
-        vscode.window.showErrorMessage("Flow IntelliSense: Failed to delete SKILL.md - " + oError.message);
+        console.error("Power Automate Utility: Failed to delete SKILL.md - " + oError.message);
+        vscode.window.showErrorMessage("Power Automate Utility: Failed to delete SKILL.md - " + oError.message);
     }
 }
 

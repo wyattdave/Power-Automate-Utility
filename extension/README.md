@@ -1,4 +1,4 @@
-# Flow IntelliSense
+# Power Automate Utility
 
 > **125 expression functions** — fully documented, autocompleted, and ready to use in your Logic App and Power Automate workflows.
 
@@ -6,7 +6,7 @@
 
 ## What It Does
 
-Flow IntelliSense brings rich editing support for Azure Logic Apps and Power Automate expression functions directly into VS Code. Stop switching between the docs and your editor — get instant access to every function's syntax, parameters, return types, and examples right where you write your workflow definitions.
+Power Automate Utility brings rich editing support for Azure Logic Apps and Power Automate expression functions directly into VS Code. Along with a skill.md file to ensure your copilot has all the right information to build expressions for you. Stop switching between the docs and your editor — get instant access to every function's syntax, parameters, return types, and examples right where you write your workflow definitions.
 
 Works in `.json` files, `.jsonc` files, and **new untitled files** with no extension, ideal for quick copy and pasting in to Power Automate.
 
@@ -140,9 +140,9 @@ Every `@{...}` expression in the example above gets full IntelliSense support.
 
 | Command | Description |
 |---------|-------------|
-| `Flow IntelliSense: Show Function Count` | Display how many expression functions are currently loaded |
-| `Flow IntelliSense: View Skill File` | Open the SKILL.md file in a Markdown preview — shows the installed Copilot skill or the bundled source |
-| `Flow IntelliSense: Delete Skill File` | Remove the SKILL.md file from the Copilot skills directory and reset the install flag |
+| `Power Automate Utility: Show Function Count` | Display how many expression functions are currently loaded |
+| `Power Automate Utility: View Skill File` | Open the SKILL.md file in a Markdown preview — shows the installed Copilot skill or the bundled source |
+| `Power Automate Utility: Delete Skill File` | Remove the SKILL.md file from the Copilot skills directory and reset the install flag |
 
 ### Copilot Skill (SKILL.md)
 
@@ -160,34 +160,6 @@ On first activation the extension automatically copies a `SKILL.md` file to `~/.
 ## Data Source
 
 Function definitions are parsed from the official [Microsoft Azure Logic Apps expression functions reference](https://learn.microsoft.com/en-us/azure/logic-apps/workflow-definition-language-functions-reference). The reference file is bundled with the extension and can be replaced with a custom version via the `flowIntelliSense.referencePath` setting.
-
----
-
-## Development
-
-```bash
-# Clone the repo
-git clone https://github.com/your-org/flow-intellisense.git
-
-# Open in VS Code
-code flow-intellisense
-
-# Press F5 to launch the Extension Development Host
-
-# Run parser tests
-cd extension
-node test/parserTest.js
-```
-
-### Building a VSIX
-
-```bash
-cd extension
-npm install -g @vscode/vsce
-vsce package
-```
-
-Install the `.vsix` via: **Extensions** > **...** > **Install from VSIX**
 
 ---
 
