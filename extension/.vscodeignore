@@ -2,5 +2,4 @@
 .vscode-test/**
 test/**
 .gitignore
-*.md
-!expression-functions-reference.md
+
