@@ -1,0 +1,54 @@
+{
+  "name": "power-automate-intellisense",
+  "displayName": "Flow IntelliSense - Power Automate and Logic App Expression Functions",
+  "description": "IntelliSense for Power Automate and Logic App expressions, either in blank text files to help with UI or custom definition.json files",
+  "version": "0.1.0",
+  "publisher": "Power DevBox",
+  "icon": "icon.png",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Snippets"
+  ],
+  "activationEvents": [
+    "onLanguage:json",
+    "onLanguage:jsonc",
+    "onLanguage:plaintext"
+  ],
+  "main": "./src/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "flowIntelliSense.showInfo",
+        "title": "Flow IntelliSense: Show Function Count"
+      },
+      {
+        "command": "flowIntelliSense.viewSkillFile",
+        "title": "Flow IntelliSense: View Skill File"
+      },
+      {
+        "command": "flowIntelliSense.deleteSkillFile",
+        "title": "Flow IntelliSense: Delete Skill File"
+      }
+    ],
+    "configuration": {
+      "title": "Flow IntelliSense",
+      "properties": {
+        "flowIntelliSense.referencePath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to the expression-functions-reference.md file. If empty, uses the bundled reference."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "lint": "eslint src",
+    "test": "node ./test/runTest.js"
+  },
+  "devDependencies": {
+    "vscode": "^1.1.37"
+  }
+}

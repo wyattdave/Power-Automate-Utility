@@ -1,0 +1,42 @@
+{
+    "definition": {
+        "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+        "actions": {
+            "Compose": {
+                "type": "Compose",
+                "inputs": "@{concat('Hello', ' ', 'World')}",
+                "runAfter": {}
+            },
+            "Get_future_time": {
+                "type": "Compose",
+                "inputs": "@{addDays(utcNow(), 7)}",
+                "runAfter": {
+                    "Compose": ["Succeeded"]
+                }
+            },
+            "Format_number": {
+                "type": "Compose",
+                "inputs": "@{formatNumber(add(1, 2), '0.00')}",
+                "runAfter": {
+                    "Get_future_time": ["Succeeded"]
+                }
+            },
+            "Format_date": {
+                "type": "Compose",
+                "inputs": "@{formatDateTime(convertTimeZone(utcNow(),'UTC','Fiji Standard Time'),'d/M/yyyy')}",
+                "runAfter": {
+                    "Format_number": ["Succeeded"]
+                }
+            }
+        },
+        "triggers": {
+            "manual": {
+                "type": "Request",
+                "kind": "Http",
+                "inputs": {
+                    "schema": {}
+                }
+            }
+        }
+    }
+}
