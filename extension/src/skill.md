@@ -1,5 +1,5 @@
 ---
-name: flow-intellisense
+name: powerAutomateUtility
 description: Power Automate and Azure Logic Apps expression functions reference. Use this skill when working with Logic Apps or Power Automate workflow expressions, including string, collection, math, date, URI, manipulation, and logical functions.
 ---
 

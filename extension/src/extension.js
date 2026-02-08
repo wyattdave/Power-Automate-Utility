@@ -4,6 +4,7 @@ const fs = require("fs");
 const os = require("os");
 const { parseFunctionReference } = require("./parser");
 const { createCompletionProvider } = require("./completionProvider");
+const { createActionCompletionProvider } = require("./actionCompletionProvider");
 const { createHoverProvider } = require("./hoverProvider");
 const { createSignatureHelpProvider } = require("./signatureHelpProvider");
 
@@ -52,6 +53,27 @@ function activate(oContext) {
     );
     aDisposables.push(oCompletionDisposable);
 
+    // Load actions.json and register action completion provider
+    const sActionsPath = resolveActionsPath(oContext);
+    if (sActionsPath) {
+        try {
+            const sActionsContent = fs.readFileSync(sActionsPath, "utf8");
+            const oActions = JSON.parse(sActionsContent);
+            const aActionKeys = Object.keys(oActions);
+            console.log("Power Automate Utility: Loaded " + aActionKeys.length + " actions from actions.json");
+
+            // Register action completion provider - triggers on @
+            const oActionCompletionDisposable = vscode.languages.registerCompletionItemProvider(
+                aDocSelectors,
+                createActionCompletionProvider(oActions),
+                "@"
+            );
+            aDisposables.push(oActionCompletionDisposable);
+        } catch (oError) {
+            console.log("Power Automate Utility: Could not load actions.json - " + oError.message);
+        }
+    }
+
     // Register hover provider
     const oHoverDisposable = vscode.languages.registerHoverProvider(
         aDocSelectors,
@@ -73,7 +95,7 @@ function activate(oContext) {
     }
 
     // Register a command to show function count
-    const oInfoCommand = vscode.commands.registerCommand("flowIntelliSense.showInfo", function () {
+    const oInfoCommand = vscode.commands.registerCommand("powerAutomateUtility.showInfo", function () {
         vscode.window.showInformationMessage(
             "Power Automate Utility: " + aFunctions.length + " Logic App expression functions loaded"
         );
@@ -81,20 +103,20 @@ function activate(oContext) {
     oContext.subscriptions.push(oInfoCommand);
 
     // Register a command to view the SKILL.md file
-    const oSkillCommand = vscode.commands.registerCommand("flowIntelliSense.viewSkillFile", function () {
+    const oSkillCommand = vscode.commands.registerCommand("powerAutomateUtility.viewSkillFile", function () {
         viewSkillFile(oContext);
     });
     oContext.subscriptions.push(oSkillCommand);
 
     // Register a command to delete the SKILL.md file
-    const oDeleteSkillCommand = vscode.commands.registerCommand("flowIntelliSense.deleteSkillFile", function () {
+    const oDeleteSkillCommand = vscode.commands.registerCommand("powerAutomateUtility.deleteSkillFile", function () {
         deleteSkillFile(oContext);
     });
     oContext.subscriptions.push(oDeleteSkillCommand);
 
     const sInstallFlagKey = "bSkillFileInstalled";
     const bIsInstalled = oContext.globalState.get(sInstallFlagKey, false);
-    const sSkillDestPath = path.join(os.homedir(), ".copilot", "skills", "flow-intellisense", "SKILL.md");
+    const sSkillDestPath = path.join(os.homedir(), ".copilot", "skills", "powerAutomateUtility", "SKILL.md");
 
     if (!bIsInstalled || !fileExists(sSkillDestPath)) {
         installSkillFile(oContext);
@@ -112,7 +134,7 @@ function activate(oContext) {
  */
 function resolveReferencePath(oContext) {
     // Check user-configured path
-    const oConfig = vscode.workspace.getConfiguration("flowIntelliSense");
+    const oConfig = vscode.workspace.getConfiguration("powerAutomateUtility");
     const sConfigPath = oConfig.get("referencePath");
     if (sConfigPath && fileExists(sConfigPath)) {
         return sConfigPath;
@@ -135,10 +157,38 @@ function resolveReferencePath(oContext) {
         return sExtPath;
     }
 
-    // Check parent directory (dev scenario)
-    const sParentPath = path.join(oContext.extensionPath, "..", "expression-functions-reference.md");
-    if (fileExists(sParentPath)) {
-        return sParentPath;
+    return null;
+}
+
+/**
+ * Resolve the path to the actions.json file.
+ * Checks: 1) user setting, 2) workspace root, 3) extension directory, 4) parent directory
+ * @param {vscode.ExtensionContext} oContext
+ * @returns {string|null}
+ */
+function resolveActionsPath(oContext) {
+    // Check user-configured path
+    const oConfig = vscode.workspace.getConfiguration("powerAutomateUtility");
+    const sConfigPath = oConfig.get("actionsPath");
+    if (sConfigPath && fileExists(sConfigPath)) {
+        return sConfigPath;
+    }
+
+    // Check workspace folders
+    const aWorkspaceFolders = vscode.workspace.workspaceFolders;
+    if (aWorkspaceFolders) {
+        for (let i = 0; i < aWorkspaceFolders.length; i++) {
+            const sWorkspacePath = path.join(aWorkspaceFolders[i].uri.fsPath, "actions.json");
+            if (fileExists(sWorkspacePath)) {
+                return sWorkspacePath;
+            }
+        }
+    }
+
+    // Check extension directory (bundled copy)
+    const sExtPath = path.join(oContext.extensionPath, "actions.json");
+    if (fileExists(sExtPath)) {
+        return sExtPath;
     }
 
     return null;

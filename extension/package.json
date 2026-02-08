@@ -3,7 +3,8 @@
   "displayName": "Power Automate Utility",
   "description": "IntelliSense for Power Automate and Logic App expressions, either in blank text files to help with UI or custom definition.json files",
   "version": "0.1.0",
-  "publisher": "Power DevBox",
+   "repository": "https://github.com/wyattdave/power-automate-utility",
+  "publisher":"PowerDevBox",
   "icon": "icon.png",
   "engines": {
     "vscode": "^1.80.0"
@@ -21,22 +22,22 @@
   "contributes": {
     "commands": [
       {
-        "command": "flowIntelliSense.showInfo",
+        "command": "powerAutomateUtility.showInfo",
         "title": "Power Automate Utility: Show Function Count"
       },
       {
-        "command": "flowIntelliSense.viewSkillFile",
+        "command": "powerAutomateUtility.viewSkillFile",
         "title": "Power Automate Utility: View Skill File"
       },
       {
-        "command": "flowIntelliSense.deleteSkillFile",
+        "command": "powerAutomateUtility.deleteSkillFile",
         "title": "Power Automate Utility: Delete Skill File"
       }
     ],
     "configuration": {
       "title": "Power Automate Utility",
       "properties": {
-        "flowIntelliSense.referencePath": {
+        "powerAutomateUtility.referencePath": {
           "type": "string",
           "default": "",
           "description": "Path to the expression-functions-reference.md file. If empty, uses the bundled reference."

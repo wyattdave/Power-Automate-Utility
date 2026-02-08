@@ -1,4 +1,59 @@
 {
+    "flow": {
+        "name": "<id>",
+        "id": "/providers/Microsoft.ProcessSimple/environments/<environmentId>/flows/<flowId>",
+        "type": "Microsoft.ProcessSimple/environments/flows",
+        "properties": {
+            "apiId": "/providers/Microsoft.PowerApps/apis/shared_logicflows",
+            "displayName": "<name>",
+            "userType": "Owner",
+            "definition": {
+                "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+                "contentVersion": "undefined",
+                "parameters": {
+                    "$authentication": {
+                        "defaultValue": {},
+                        "type": "SecureObject"
+                    },
+                    "$connections": {
+                        "defaultValue": {},
+                        "type": "Object"
+                    }
+                },
+                "triggers": {},
+                "actions": {}
+            },
+            "triggerSchema": {
+                "type": "object",
+                "properties": {},
+                "required": []
+            },
+            "state": "Started",
+            "sharingType": "CommonDataService",
+            "plan": "NotSpecified",
+            "connectionReferences": {},
+            "flowSuspensionReason": "None",
+            "environment": {
+                "name": "<environmentId>",
+                "type": "Microsoft.ProcessSimple/environments",
+                "id": "/providers/Microsoft.ProcessSimple/environments/<environmentId>"
+            },
+            "definitionSummary": {
+                "triggers": [],
+                "actions": []
+            },
+            "creator": {
+                "tenantId": "<tenantId>",
+                "objectId": "<userObjectId>",
+                "userId": "<userId>",
+                "userType": "ActiveDirectory"
+            },
+            "workflowEntityId": "<workflowEntityId>",
+            "referencedResources": [],
+            "isManaged": false,
+            "machineDescriptionData": {}
+        }
+    },
     "api": {
         "type": "ApiConnection",
         "inputs": {
@@ -189,6 +244,25 @@
         "runtimeConfiguration": {
             "contentTransfer": {
                 "transferMode": "Chunked"
+            }
+        }
+    },
+    "Get_items": {
+        "runAfter": {},
+        "type": "OpenApiConnection",
+        "inputs": {
+            "parameters": {
+                "dataset": "https://sharepoint.com/sites/",
+                "table": ""
+            },
+            "host": {
+                "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                "connectionName": "shared_sharepointonline",
+                "operationId": "GetItems"
+            },
+            "authentication": {
+                "value": "@json(decodeBase64(triggerOutputs().headers['X-MS-APIM-Tokens']))['$ConnectionKey']",
+                "type": "Raw"
             }
         }
     }

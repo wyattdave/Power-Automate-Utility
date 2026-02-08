@@ -1,12 +1,16 @@
 # Power Automate Utility
 
-> **125 expression functions** — fully documented, autocompleted, and ready to use in your Logic App and Power Automate workflows.
+> **125 expression functions** - fully documented, autocompleted, and ready to use in your Logic App and Power Automate workflows.
 
 ---
 
 ## What It Does
 
-Power Automate Utility brings rich editing support for Azure Logic Apps and Power Automate expression functions directly into VS Code. Along with a skill.md file to ensure your copilot has all the right information to build expressions for you. Stop switching between the docs and your editor — get instant access to every function's syntax, parameters, return types, and examples right where you write your workflow definitions.
+Power Automate Utility is a intellisense for Power Automate. Ideal for:
+
+Scratch pad: type complex expressions before coping and pasting back into Power Automate
+Edit Power Automate Definition files: expressions and basic actions
+GitHub agents: skill file for expressions
 
 Works in `.json` files, `.jsonc` files, and **new untitled files** with no extension, ideal for quick copy and pasting in to Power Automate.
 
@@ -16,7 +20,7 @@ Works in `.json` files, `.jsonc` files, and **new untitled files** with no exten
 
 ### Autocomplete
 
-Type `@{` inside any JSON string value to instantly see all 125 expression functions. Each suggestion includes:
+Type `@{` or `@` inside any JSON string value to instantly see all 125 expression functions. Each suggestion includes:
 
 - The function's category (String, Math, Date/Time, etc.)
 - A full parameter list showing required vs. optional parameters
@@ -25,6 +29,9 @@ Type `@{` inside any JSON string value to instantly see all 125 expression funct
 ```json
 "inputs": "@{"   // <-- type @{ here to see all functions
 ```
+
+`@{` to paste into Power Automate UI input box
+`@` to edit within definition (also if copy and paste but skip @ you can paste into Function editor)
 
 ### Hover Documentation
 
@@ -44,9 +51,32 @@ Type `(` after a function name or `,` between arguments to see:
 - Which parameter you're currently filling in (highlighted)
 - Type and description for the active parameter
 
+### Action Templates
+
+Type `@@` anywhere in a JSON file to see a list of available action templates from `actions.json`. Start typing after `@@` to filter:
+
+```json
+@@com   // shows Compose, filters as you type
+```
+
+Select an action to insert the full action definition:
+
+```json
+"Compose": {
+    "runAfter": {},
+    "metadata": {
+        "operationMetadataId": "6063a4bc-73b8-4bc2-b84b-d73c4f79c51c"
+    },
+    "type": "Compose",
+    "inputs": ""
+}
+```
+
+The `@@` trigger is replaced with the complete action JSON.
+
 ---
 
-## Supported Functions — 125 Total
+## Supported Functions - 125 Total
 
 ### String (15 functions)
 
@@ -89,77 +119,39 @@ Type `(` after a function name or `,` between arguments to see:
 ## Quick Start
 
 1. **Install** the extension from the VS Code Marketplace
-2. **Open** any `.json` file — such as a Logic App workflow definition
+2. **Open** new file - just start typing, no file extension needed
 3. **Type** `@{` inside a string value to see function suggestions
-4. **Select** a function — required parameters are inserted as snippet placeholders
+4. **Select** a function - required parameters are inserted as snippet placeholders
 5. **Press** `Tab` to jump between parameters
 6. **Hover** over any function name to read its full documentation
+7. **Type** `@@` to insert action templates from `actions.json`
 
-Also works in **new untitled files** — just start typing, no file extension needed.
-
----
-
-## Example Workflow
-
-```json
-{
-    "actions": {
-        "Compose": {
-            "type": "Compose",
-            "inputs": "@{concat('Hello', ' ', 'World')}"
-        },
-        "Get_future_time": {
-            "type": "Compose",
-            "inputs": "@{addDays(utcNow(), 7)}"
-        },
-        "Format_result": {
-            "type": "Compose",
-            "inputs": "@{formatNumber(add(1, 2), '0.00')}"
-        },
-        "Format_date": {
-            "type": "Compose",
-            "inputs": "@{formatDateTime(convertTimeZone(utcNow(),'UTC','Fiji Standard Time'),'d/M/yyyy')}"
-        }
-    }
-}
-```
-
-Every `@{...}` expression in the example above gets full IntelliSense support.
-
----
-
-## Configuration
-
-| Setting | Description | Default |
-|---------|-------------|---------|
-| `flowIntelliSense.referencePath` | Path to a custom `expression-functions-reference.md` file | Bundled or workspace copy |
-
----
+Also works in **json files like definition.json** .
 
 ## Commands
 
 | Command | Description |
 |---------|-------------|
 | `Power Automate Utility: Show Function Count` | Display how many expression functions are currently loaded |
-| `Power Automate Utility: View Skill File` | Open the SKILL.md file in a Markdown preview — shows the installed Copilot skill or the bundled source |
+| `Power Automate Utility: View Skill File` | Open the SKILL.md file in a Markdown preview - shows the installed Copilot skill or the bundled source |
 | `Power Automate Utility: Delete Skill File` | Remove the SKILL.md file from the Copilot skills directory and reset the install flag |
 
 ### Copilot Skill (SKILL.md)
 
-On first activation the extension automatically copies a `SKILL.md` file to `~/.copilot/skills/flow-intellisense/SKILL.md`. This file gives GitHub Copilot contextual knowledge of all 125 expression functions so it can assist with Power Automate and Logic App expressions. Use the **View Skill File** command to inspect it or **Delete Skill File** to remove it.
+On first activation the extension automatically copies a `SKILL.md` file to `~/.copilot/skills/powerAutomateUtility/SKILL.md`. This file gives GitHub Copilot contextual knowledge of all 125 expression functions so it can assist with Power Automate and Logic App expressions. Use the **View Skill File** command to inspect it or **Delete Skill File** to remove it.
 
 ---
 
 ## Requirements
 
 - VS Code **1.80.0** or later
-- No additional dependencies — the extension is self-contained
+- No additional dependencies - the extension is self-contained
 
 ---
 
 ## Data Source
 
-Function definitions are parsed from the official [Microsoft Azure Logic Apps expression functions reference](https://learn.microsoft.com/en-us/azure/logic-apps/workflow-definition-language-functions-reference). The reference file is bundled with the extension and can be replaced with a custom version via the `flowIntelliSense.referencePath` setting.
+Function definitions are parsed from the official [Microsoft Azure Logic Apps expression functions reference](https://learn.microsoft.com/en-us/azure/logic-apps/workflow-definition-language-functions-reference). The reference file is bundled with the extension and can be replaced with a custom version via the `powerAutomateUtility.referencePath` setting.
 
 ---
 
@@ -176,6 +168,4 @@ Function definitions are parsed from the official [Microsoft Azure Logic Apps ex
 
 ---
 
-## License
 
-MIT

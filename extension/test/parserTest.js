@@ -5,7 +5,7 @@
 const path = require("path");
 const { parseFunctionReference } = require("../src/parser");
 
-const sRefPath = path.join(__dirname, "..", "..", "expression-functions-reference.md");
+const sRefPath = path.join(__dirname, "..", "expression-functions-reference.md");
 let iTotalTests = 0;
 let iPassedTests = 0;
 
