@@ -7,6 +7,7 @@ const { createCompletionProvider } = require("./completionProvider");
 const { createActionCompletionProvider } = require("./actionCompletionProvider");
 const { createHoverProvider } = require("./hoverProvider");
 const { createSignatureHelpProvider } = require("./signatureHelpProvider");
+const { registerFlowCommands } = require("./flowCommands");
 
 let aDisposables = [];
 
@@ -92,6 +93,12 @@ function activate(oContext) {
     // Add all disposables to the extension context
     for (let i = 0; i < aDisposables.length; i++) {
         oContext.subscriptions.push(aDisposables[i]);
+    }
+
+    // Register flow editing commands (sign in, list, open, update)
+    const aFlowDisposables = registerFlowCommands(oContext);
+    for (let i = 0; i < aFlowDisposables.length; i++) {
+        oContext.subscriptions.push(aFlowDisposables[i]);
     }
 
     // Register a command to show function count
