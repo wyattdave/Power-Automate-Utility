@@ -8,7 +8,7 @@ try {
 const path = require("path");
 const fs = require("fs");
 const os = require("os");
-const { getToken, clearToken, listFlows, getClientData, updateClientData } = require("./dataverseClient");
+const { getToken, clearToken, listFlows, getClientData, updateClientData, listEnvironmentVariables } = require("./dataverseClient");
 
 /**
  * Prompt the user for the Power Platform environment URL. Shows saved environments for the current tenant if available.
@@ -262,8 +262,17 @@ function registerFlowCommands(oContext) {
                 cancellable: false
             }, function () {
                 return getToken(sEnvUrl, sTenantId).then(function (sToken) {
-                    return listFlows(sEnvUrl, sToken);
-                }).then(function (aFlows) {
+                    return Promise.all([
+                        listFlows(sEnvUrl, sToken),
+                        listEnvironmentVariables(sEnvUrl, sToken).catch(function () { return []; })
+                    ]);
+                }).then(function (aResults) {
+                    const aFlows = aResults[0];
+                    const aEnvVars = aResults[1];
+
+                    // Store environment variables for use by the parameters completion provider
+                    oContext.globalState.update("aEnvironmentVariables", aEnvVars);
+
                     if (aFlows.length === 0) {
                         vscode.window.showInformationMessage("No cloud flows found in this environment.");
                         return;

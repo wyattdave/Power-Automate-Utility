@@ -248,10 +248,38 @@ function updateClientData(sEnvUrl, sToken, sFlowId, sClientData) {
     });
 }
 
+/**
+ * List environment variable definitions from the Dataverse environmentvariabledefinition table.
+ * @param {string} sEnvUrl - The environment URL
+ * @param {string} sToken - Bearer token
+ * @returns {Promise<Array<{sName: string, sDisplayName: string, sType: string}>>}
+ */
+function listEnvironmentVariables(sEnvUrl, sToken) {
+    const sRequestUrl = sEnvUrl + "/api/data/v9.2/environmentvariabledefinitions?$select=schemaname,displayname,type&$orderby=displayname%20asc";
+
+    return makeRequest("GET", sRequestUrl, sToken, null).then(function (oResponse) {
+        if (oResponse.iStatusCode !== 200) {
+            throw new Error("Failed to list environment variables. HTTP " + oResponse.iStatusCode + ": " + oResponse.sBody);
+        }
+
+        const oData = JSON.parse(oResponse.sBody);
+        const aVars = oData.value || [];
+
+        return aVars.map(function (oVar) {
+            return {
+                sName: oVar.schemaname || "",
+                sDisplayName: oVar.displayname || oVar.schemaname || "Unnamed",
+                sType: oVar.type
+            };
+        });
+    });
+}
+
 module.exports = {
     getToken: getToken,
     clearToken: clearToken,
     listFlows: listFlows,
     getClientData: getClientData,
-    updateClientData: updateClientData
+    updateClientData: updateClientData,
+    listEnvironmentVariables: listEnvironmentVariables
 };

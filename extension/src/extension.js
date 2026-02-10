@@ -7,6 +7,7 @@ const { createCompletionProvider } = require("./completionProvider");
 const { createActionCompletionProvider } = require("./actionCompletionProvider");
 const { createHoverProvider } = require("./hoverProvider");
 const { createSignatureHelpProvider } = require("./signatureHelpProvider");
+const { createParametersCompletionProvider } = require("./parametersCompletionProvider");
 const { registerFlowCommands } = require("./flowCommands");
 
 let aDisposables = [];
@@ -73,6 +74,14 @@ function registerIntellisenseProviders(oContext, aFunctions) {
         { triggerCharacters: ["(", ","], retriggerCharacters: [","] }
     );
     aIntellisenseDisposables.push(oSignatureDisposable);
+
+    // Register parameters completion provider - triggers on ( for @parameters(...)
+    const oParametersCompletionDisposable = vscode.languages.registerCompletionItemProvider(
+        aDocSelectors,
+        createParametersCompletionProvider(oContext),
+        "("
+    );
+    aIntellisenseDisposables.push(oParametersCompletionDisposable);
 
     // Add all IntelliSense disposables to the extension context
     for (let i = 0; i < aIntellisenseDisposables.length; i++) {

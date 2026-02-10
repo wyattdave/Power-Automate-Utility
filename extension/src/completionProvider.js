@@ -61,9 +61,18 @@ function buildCompletionItem(oFunc, bAfterAt, oReplaceRange) {
     oItem.detail = "[" + oFunc.sCategory + "] " + oFunc.sName + "(" + formatParamList(oFunc.aParameters) + ")";
     oItem.documentation = buildMarkdownDocs(oFunc);
 
-    // Build the insert text with snippet tabstops for parameters
-    const sSnippet = buildSnippetString(oFunc);
-    oItem.insertText = new vscode.SnippetString(sSnippet);
+    // For parameters(), insert plain text (no snippet) so triggerSuggest works
+    if (oFunc.sName === "parameters") {
+        oItem.insertText = "parameters(";
+        oItem.command = {
+            command: "editor.action.triggerSuggest",
+            title: "Trigger Parameter Suggestions"
+        };
+    } else {
+        // Build the insert text with snippet tabstops for parameters
+        const sSnippet = buildSnippetString(oFunc);
+        oItem.insertText = new vscode.SnippetString(sSnippet);
+    }
 
     if (oFunc.bDeprecated) {
         oItem.tags = [vscode.CompletionItemTag.Deprecated];
