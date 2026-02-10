@@ -1,7 +1,12 @@
 const https = require("https");
 const http = require("http");
 const url = require("url");
-const vscode = require("vscode");
+let vscode;
+try {
+    vscode = require("vscode");
+} catch (e) {
+    vscode = null;
+}
 
 const sClientId = "51f81489-12ee-4a9e-aaae-a2591f45987d";
 const iLocalPort = 5500;

@@ -10,6 +10,85 @@ const { createSignatureHelpProvider } = require("./signatureHelpProvider");
 const { registerFlowCommands } = require("./flowCommands");
 
 let aDisposables = [];
+let aIntellisenseDisposables = [];
+let bCleaningUpAt = false;
+
+/**
+ * Document selectors for JSON files and untitled (new) files
+ */
+const aDocSelectors = [
+    { scheme: "file", language: "json" },
+    { scheme: "file", language: "jsonc" },
+    { scheme: "untitled", language: "json" },
+    { scheme: "untitled", language: "jsonc" },
+    { scheme: "untitled", language: "plaintext" },
+    { scheme: "file", language: "plaintext" }
+];
+
+/**
+ * Register all IntelliSense providers (completion, hover, signature help)
+ * @param {vscode.ExtensionContext} oContext
+ * @param {Array} aFunctions
+ */
+function registerIntellisenseProviders(oContext, aFunctions) {
+    // Register completion provider - triggers on @, {, and dot
+    const oCompletionDisposable = vscode.languages.registerCompletionItemProvider(
+        aDocSelectors,
+        createCompletionProvider(aFunctions),
+        "@", "{", "."
+    );
+    aIntellisenseDisposables.push(oCompletionDisposable);
+
+    // Load actions.json and register action completion provider
+    const sActionsPath = resolveActionsPath(oContext);
+    if (sActionsPath) {
+        try {
+            const sActionsContent = fs.readFileSync(sActionsPath, "utf8");
+            const oActions = JSON.parse(sActionsContent);
+            const aActionKeys = Object.keys(oActions);
+            console.log("Power Automate Utility: Loaded " + aActionKeys.length + " actions from actions.json");
+
+            const oActionCompletionDisposable = vscode.languages.registerCompletionItemProvider(
+                aDocSelectors,
+                createActionCompletionProvider(oActions),
+                "@"
+            );
+            aIntellisenseDisposables.push(oActionCompletionDisposable);
+        } catch (oError) {
+            console.log("Power Automate Utility: Could not load actions.json - " + oError.message);
+        }
+    }
+
+    // Register hover provider
+    const oHoverDisposable = vscode.languages.registerHoverProvider(
+        aDocSelectors,
+        createHoverProvider(aFunctions)
+    );
+    aIntellisenseDisposables.push(oHoverDisposable);
+
+    // Register signature help provider - triggers on ( and ,
+    const oSignatureDisposable = vscode.languages.registerSignatureHelpProvider(
+        aDocSelectors,
+        createSignatureHelpProvider(aFunctions),
+        { triggerCharacters: ["(", ","], retriggerCharacters: [","] }
+    );
+    aIntellisenseDisposables.push(oSignatureDisposable);
+
+    // Add all IntelliSense disposables to the extension context
+    for (let i = 0; i < aIntellisenseDisposables.length; i++) {
+        oContext.subscriptions.push(aIntellisenseDisposables[i]);
+    }
+}
+
+/**
+ * Dispose all IntelliSense providers
+ */
+function disposeIntellisenseProviders() {
+    for (let i = 0; i < aIntellisenseDisposables.length; i++) {
+        aIntellisenseDisposables[i].dispose();
+    }
+    aIntellisenseDisposables = [];
+}
 
 /**
  * Activate the extension - parse the reference file and register all providers
@@ -36,64 +115,36 @@ function activate(oContext) {
         return;
     }
 
-    // Document selectors for JSON files and untitled (new) files
-    const aDocSelectors = [
-        { scheme: "file", language: "json" },
-        { scheme: "file", language: "jsonc" },
-        { scheme: "untitled", language: "json" },
-        { scheme: "untitled", language: "jsonc" },
-        { scheme: "untitled", language: "plaintext" },
-        { scheme: "file", language: "plaintext" }
-    ];
+    // Check persisted IntelliSense enabled state (default: true)
+    const bIntellisenseEnabled = oContext.globalState.get("bIntellisenseEnabled", true);
 
-    // Register completion provider - triggers on @, {, and dot
-    const oCompletionDisposable = vscode.languages.registerCompletionItemProvider(
-        aDocSelectors,
-        createCompletionProvider(aFunctions),
-        "@", "{", "."
-    );
-    aDisposables.push(oCompletionDisposable);
+    // Register IntelliSense providers if enabled
+    if (bIntellisenseEnabled) {
+        registerIntellisenseProviders(oContext, aFunctions);
+    }
 
-    // Load actions.json and register action completion provider
-    const sActionsPath = resolveActionsPath(oContext);
-    if (sActionsPath) {
-        try {
-            const sActionsContent = fs.readFileSync(sActionsPath, "utf8");
-            const oActions = JSON.parse(sActionsContent);
-            const aActionKeys = Object.keys(oActions);
-            console.log("Power Automate Utility: Loaded " + aActionKeys.length + " actions from actions.json");
+    // Show startup notification with current IntelliSense status
+    const sStatus = bIntellisenseEnabled ? "ON" : "OFF";
+    vscode.window.showInformationMessage("Power Automate Utility: IntelliSense is " + sStatus);
 
-            // Register action completion provider - triggers on @
-            const oActionCompletionDisposable = vscode.languages.registerCompletionItemProvider(
-                aDocSelectors,
-                createActionCompletionProvider(oActions),
-                "@"
-            );
-            aDisposables.push(oActionCompletionDisposable);
-        } catch (oError) {
-            console.log("Power Automate Utility: Could not load actions.json - " + oError.message);
+    // Register toggle IntelliSense command
+    const oToggleCommand = vscode.commands.registerCommand("powerAutomateUtility.toggleIntellisense", function () {
+        const bCurrentState = oContext.globalState.get("bIntellisenseEnabled", true);
+        const bNewState = !bCurrentState;
+        oContext.globalState.update("bIntellisenseEnabled", bNewState);
+
+        if (bNewState) {
+            registerIntellisenseProviders(oContext, aFunctions);
+            vscode.window.showInformationMessage("Power Automate Utility: IntelliSense turned ON");
+        } else {
+            disposeIntellisenseProviders();
+            vscode.window.showInformationMessage("Power Automate Utility: IntelliSense turned OFF");
         }
-    }
+    });
+    oContext.subscriptions.push(oToggleCommand);
 
-    // Register hover provider
-    const oHoverDisposable = vscode.languages.registerHoverProvider(
-        aDocSelectors,
-        createHoverProvider(aFunctions)
-    );
-    aDisposables.push(oHoverDisposable);
-
-    // Register signature help provider - triggers on ( and ,
-    const oSignatureDisposable = vscode.languages.registerSignatureHelpProvider(
-        aDocSelectors,
-        createSignatureHelpProvider(aFunctions),
-        { triggerCharacters: ["(", ","], retriggerCharacters: [","] }
-    );
-    aDisposables.push(oSignatureDisposable);
-
-    // Add all disposables to the extension context
-    for (let i = 0; i < aDisposables.length; i++) {
-        oContext.subscriptions.push(aDisposables[i]);
-    }
+    // Register listener to remove nested @ inside expressions
+    registerNestedAtCleanup(oContext);
 
     // Register flow editing commands (sign in, list, open, update)
     const aFlowDisposables = registerFlowCommands(oContext);
@@ -129,8 +180,6 @@ function activate(oContext) {
         installSkillFile(oContext);
         oContext.globalState.update(sInstallFlagKey, true);
     }
-
-    //vscode.window.showInformationMessage("Power Automate Utility: Loaded " + aFunctions.length + " expression functions");
 }
 
 /**
@@ -282,6 +331,139 @@ function deleteSkillFile(oContext) {
         console.error("Power Automate Utility: Failed to delete SKILL.md - " + oError.message);
         vscode.window.showErrorMessage("Power Automate Utility: Failed to delete SKILL.md - " + oError.message);
     }
+}
+
+/**
+ * Check if a character is a letter (a-z, A-Z).
+ * @param {string} sChar - single character
+ * @returns {boolean}
+ */
+function isLetter(sChar) {
+    return (sChar >= "a" && sChar <= "z") || (sChar >= "A" && sChar <= "Z");
+}
+
+/**
+ * Scan a line of text for @ symbols that appear inside an outer expression's
+ * parentheses (nested function calls) and return TextEdits to delete them.
+ * Skips @ inside single-quoted string literals.
+ * @param {string} sLine - the full line text
+ * @param {number} iLine - zero-based line number
+ * @returns {Array<vscode.TextEdit>}
+ */
+function findNestedAtEdits(sLine, iLine) {
+    const aEdits = [];
+    let i = 0;
+
+    while (i < sLine.length) {
+        // Look for the start of an expression: @ followed by a letter
+        if (sLine[i] === "@" && i + 1 < sLine.length && isLetter(sLine[i + 1])) {
+            i++; // skip the leading @
+            // Skip the function name
+            while (i < sLine.length && (isLetter(sLine[i]) || (sLine[i] >= "0" && sLine[i] <= "9") || sLine[i] === "_")) {
+                i++;
+            }
+
+            // Check for opening parenthesis
+            if (i < sLine.length && sLine[i] === "(") {
+                i++; // skip (
+                let iDepth = 1;
+
+                while (i < sLine.length && iDepth > 0) {
+                    if (sLine[i] === "'") {
+                        // Skip single-quoted string literal
+                        i++;
+                        while (i < sLine.length) {
+                            if (sLine[i] === "'" && i + 1 < sLine.length && sLine[i + 1] === "'") {
+                                i += 2; // escaped quote ''
+                            } else if (sLine[i] === "'") {
+                                i++; // closing quote
+                                break;
+                            } else {
+                                i++;
+                            }
+                        }
+                    } else if (sLine[i] === "(") {
+                        iDepth++;
+                        i++;
+                    } else if (sLine[i] === ")") {
+                        iDepth--;
+                        i++;
+                    } else if (sLine[i] === "@" && i + 1 < sLine.length && isLetter(sLine[i + 1])) {
+                        // Nested @ before a function name — mark for removal
+                        aEdits.push(vscode.TextEdit.delete(
+                            new vscode.Range(iLine, i, iLine, i + 1)
+                        ));
+                        i++;
+                    } else {
+                        i++;
+                    }
+                }
+            }
+        } else {
+            i++;
+        }
+    }
+
+    return aEdits;
+}
+
+/**
+ * Register a listener that removes @ symbols from nested function calls
+ * inside expression parentheses whenever the document changes.
+ * @param {vscode.ExtensionContext} oContext
+ */
+function registerNestedAtCleanup(oContext) {
+    const oDisposable = vscode.workspace.onDidChangeTextDocument(function (oEvent) {
+        if (bCleaningUpAt) {
+            return;
+        }
+
+        const oEditor = vscode.window.activeTextEditor;
+        if (!oEditor || oEditor.document !== oEvent.document) {
+            return;
+        }
+
+        const sLangId = oEvent.document.languageId;
+        if (sLangId !== "json" && sLangId !== "jsonc" && sLangId !== "plaintext") {
+            return;
+        }
+
+        const aAllEdits = [];
+        const oProcessedLines = {};
+
+        for (let c = 0; c < oEvent.contentChanges.length; c++) {
+            const oChange = oEvent.contentChanges[c];
+            const iStartLine = oChange.range.start.line;
+            const aNewLines = oChange.text.split("\n");
+            const iEndLine = iStartLine + aNewLines.length - 1;
+
+            for (let iLine = iStartLine; iLine <= iEndLine; iLine++) {
+                if (oProcessedLines[iLine] || iLine >= oEvent.document.lineCount) {
+                    continue;
+                }
+                oProcessedLines[iLine] = true;
+
+                const sLineText = oEvent.document.lineAt(iLine).text;
+                const aLineEdits = findNestedAtEdits(sLineText, iLine);
+                for (let e = 0; e < aLineEdits.length; e++) {
+                    aAllEdits.push(aLineEdits[e]);
+                }
+            }
+        }
+
+        if (aAllEdits.length > 0) {
+            bCleaningUpAt = true;
+            const oWorkspaceEdit = new vscode.WorkspaceEdit();
+            oWorkspaceEdit.set(oEvent.document.uri, aAllEdits);
+            vscode.workspace.applyEdit(oWorkspaceEdit).then(function () {
+                bCleaningUpAt = false;
+            }, function () {
+                bCleaningUpAt = false;
+            });
+        }
+    });
+
+    oContext.subscriptions.push(oDisposable);
 }
 
 /**

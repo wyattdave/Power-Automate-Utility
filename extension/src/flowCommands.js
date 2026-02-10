@@ -1,16 +1,73 @@
-const vscode = require("vscode");
+let vscode;
+try {
+    vscode = require("vscode");
+} catch (e) {
+    // Running in test/node environment where 'vscode' is not available
+    vscode = null;
+}
 const path = require("path");
 const fs = require("fs");
 const os = require("os");
 const { getToken, clearToken, listFlows, getClientData, updateClientData } = require("./dataverseClient");
 
 /**
- * Prompt the user for the Power Platform environment URL.
+ * Prompt the user for the Power Platform environment URL. Shows saved environments for the current tenant if available.
+ * @param {vscode.ExtensionContext} oContext
  * @returns {Promise<string|undefined>}
  */
-function promptForEnvUrl() {
+function promptForEnvUrl(oContext) {
+    const sStoredTenant = oContext.globalState.get("flowTenantId", "");
+    const sPrompt = "Enter the Power Platform environment URL";
+
+    const aSaved = getEnvListForTenant(oContext, sStoredTenant);
+    if (aSaved && aSaved.length > 0) {
+        const aItems = aSaved.map(function (s) {
+            return { label: s };
+        });
+        aItems.push({ label: "Add new environment..." });
+
+        return vscode.window.showQuickPick(aItems, {
+            placeHolder: "Select an environment or add a new one",
+            matchOnDescription: true
+        }).then(function (oSelected) {
+            if (!oSelected) {
+                return undefined;
+            }
+
+            if (oSelected.label === "Add new environment...") {
+                return vscode.window.showInputBox({
+                    prompt: sPrompt,
+                    placeHolder: "https://yourorg.crm.dynamics.com",
+                    ignoreFocusOut: true,
+                    validateInput: function (sValue) {
+                        if (!sValue || !sValue.trim()) {
+                            return "Environment URL is required";
+                        }
+                        let bIsHttp = sValue.indexOf("https://") === 0 || sValue.indexOf("http://") === 0;
+                        if (!bIsHttp) {
+                            return "URL must start with https:// or http://";
+                        }
+                        return null;
+                    }
+                }).then(function (sValue) {
+                    if (sValue) {
+                        const sTrim = sValue.replace(new RegExp("[/]+$", ""), "");
+                        if (sStoredTenant) {
+                            addEnvToTenantList(oContext, sStoredTenant, sTrim);
+                        }
+                        return sTrim;
+                    }
+                    return undefined;
+                });
+            }
+
+            return oSelected.label;
+        });
+    }
+
+    // No saved environments - prompt for new one
     return vscode.window.showInputBox({
-        prompt: "Enter the Power Platform environment URL",
+        prompt: sPrompt,
         placeHolder: "https://yourorg.crm.dynamics.com",
         ignoreFocusOut: true,
         validateInput: function (sValue) {
@@ -25,8 +82,11 @@ function promptForEnvUrl() {
         }
     }).then(function (sValue) {
         if (sValue) {
-            // Remove trailing slash if present
-            return sValue.replace(new RegExp("[/]+$", ""), "");
+            const sTrim = sValue.replace(new RegExp("[/]+$", ""), "");
+            if (sStoredTenant) {
+                addEnvToTenantList(oContext, sStoredTenant, sTrim);
+            }
+            return sTrim;
         }
         return undefined;
     });
@@ -36,10 +96,13 @@ function promptForEnvUrl() {
  * Prompt the user for their Entra ID tenant ID.
  * @returns {Promise<string|undefined>}
  */
-function promptForTenantId() {
+function promptForTenantId(oContext) {
+    const sStoredTenant = oContext.globalState.get("flowTenantId", "");
+
     return vscode.window.showInputBox({
         prompt: "Enter your Entra ID (Azure AD) Tenant ID or domain",
         placeHolder: "e.g., contoso.onmicrosoft.com or 12345678-abcd-...",
+        value: sStoredTenant || undefined,
         ignoreFocusOut: true,
         validateInput: function (sValue) {
             if (!sValue || !sValue.trim()) {
@@ -49,10 +112,61 @@ function promptForTenantId() {
         }
     }).then(function (sValue) {
         if (sValue) {
-            return sValue.trim();
+            const sTrim = sValue.trim();
+            // If tenant changed, clear saved environment list for previous tenant
+            if (sStoredTenant && sStoredTenant !== sTrim) {
+                oContext.globalState.update("flowEnvList_" + sStoredTenant, []);
+            }
+            oContext.globalState.update("flowTenantId", sTrim);
+            return sTrim;
         }
         return undefined;
     });
+}
+
+/**
+ * Get saved environment list for a tenant
+ * @param {vscode.ExtensionContext} oContext
+ * @param {string} sTenant
+ * @returns {Array<string>}
+ */
+function getEnvListForTenant(oContext, sTenant) {
+    if (!sTenant) {
+        return [];
+    }
+    return oContext.globalState.get("flowEnvList_" + sTenant, []);
+}
+
+/**
+ * Add an environment URL to a tenant's saved list
+ * @param {vscode.ExtensionContext} oContext
+ * @param {string} sTenant
+ * @param {string} sEnvUrl
+ */
+function addEnvToTenantList(oContext, sTenant, sEnvUrl) {
+    if (!sTenant || !sEnvUrl) {
+        return;
+    }
+    const aList = getEnvListForTenant(oContext, sTenant);
+    for (let i = 0; i < aList.length; i++) {
+        if (aList[i] === sEnvUrl) {
+            return;
+        }
+    }
+    aList.push(sEnvUrl);
+    oContext.globalState.update("flowEnvList_" + sTenant, aList);
+}
+
+/**
+ * Clear saved environment list for a tenant
+ * @param {vscode.ExtensionContext} oContext
+ * @param {string} sTenant
+ */
+function clearEnvListForTenant(oContext, sTenant) {
+    if (!sTenant) {
+        return;
+    }
+    oContext.globalState.update("flowEnvList_" + sTenant, []);
 }
 
 /**
@@ -97,19 +211,23 @@ function registerFlowCommands(oContext) {
     // Command: Sign In
     // ----------------------------------------------------------------
     const oSignInCmd = vscode.commands.registerCommand("powerAutomateUtility.signIn", function () {
-        promptForEnvUrl().then(function (sEnvUrl) {
-            if (!sEnvUrl) {
+        // Prompt for tenant first so we can show saved environments
+        promptForTenantId(oContext).then(function (sTenantId) {
+            if (!sTenantId) {
                 return;
             }
 
-            promptForTenantId().then(function (sTenantId) {
-                if (!sTenantId) {
+            promptForEnvUrl(oContext).then(function (sEnvUrl) {
+                if (!sEnvUrl) {
                     return;
                 }
 
-                // Store tenant and env for later commands
-                oContext.workspaceState.update("flowEnvUrl", sEnvUrl);
-                oContext.workspaceState.update("flowTenantId", sTenantId);
+                // Persist the selected environment and tenant
+                oContext.globalState.update("flowEnvUrl", sEnvUrl);
+                oContext.globalState.update("flowTenantId", sTenantId);
+
+                // Add the environment to the tenant's saved list
+                addEnvToTenantList(oContext, sTenantId, sEnvUrl);
 
                 // Clear any cached token for this environment
                 clearToken(sEnvUrl);
@@ -134,8 +252,8 @@ function registerFlowCommands(oContext) {
     // Command: List Flows
     // ----------------------------------------------------------------
     const oListCmd = vscode.commands.registerCommand("powerAutomateUtility.listFlows", function () {
-        const sStoredEnv = oContext.workspaceState.get("flowEnvUrl");
-        const sStoredTenant = oContext.workspaceState.get("flowTenantId");
+        const sStoredEnv = oContext.globalState.get("flowEnvUrl");
+        const sStoredTenant = oContext.globalState.get("flowTenantId");
 
         const oDoList = function (sEnvUrl, sTenantId) {
             vscode.window.withProgress({
@@ -185,16 +303,21 @@ function registerFlowCommands(oContext) {
         if (sStoredEnv && sStoredTenant) {
             oDoList(sStoredEnv, sStoredTenant);
         } else {
-            promptForEnvUrl().then(function (sEnvUrl) {
-                if (!sEnvUrl) {
+            // Prompt for tenant first so we can show saved environments
+            promptForTenantId(oContext).then(function (sTenantId) {
+                if (!sTenantId) {
                     return;
                 }
-                promptForTenantId().then(function (sTenantId) {
-                    if (!sTenantId) {
+                promptForEnvUrl(oContext).then(function (sEnvUrl) {
+                    if (!sEnvUrl) {
                         return;
                     }
-                    oContext.workspaceState.update("flowEnvUrl", sEnvUrl);
-                    oContext.workspaceState.update("flowTenantId", sTenantId);
+
+                    // Persist selections and ensure the environment is saved for this tenant
+                    oContext.globalState.update("flowEnvUrl", sEnvUrl);
+                    oContext.globalState.update("flowTenantId", sTenantId);
+                    addEnvToTenantList(oContext, sTenantId, sEnvUrl);
+
                     oDoList(sEnvUrl, sTenantId);
                 });
             });
@@ -361,5 +484,11 @@ function registerFlowCommands(oContext) {
 }
 
 module.exports = {
-    registerFlowCommands: registerFlowCommands
+    registerFlowCommands: registerFlowCommands,
+    // exported for unit testing
+    promptForTenantId: promptForTenantId,
+    promptForEnvUrl: promptForEnvUrl,
+    getEnvListForTenant: getEnvListForTenant,
+    addEnvToTenantList: addEnvToTenantList,
+    clearEnvListForTenant: clearEnvListForTenant
 };

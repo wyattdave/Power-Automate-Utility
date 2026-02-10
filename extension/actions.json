@@ -1,57 +1,50 @@
 {
     "flow": {
-        "name": "<id>",
-        "id": "/providers/Microsoft.ProcessSimple/environments/<environmentId>/flows/<flowId>",
-        "type": "Microsoft.ProcessSimple/environments/flows",
         "properties": {
-            "apiId": "/providers/Microsoft.PowerApps/apis/shared_logicflows",
-            "displayName": "<name>",
-            "userType": "Owner",
+            "connectionReferences": {
+                "shared_": {
+                    "runtimeSource": "invoker",
+                    "connection": {
+                        "connectionReferenceLogicalName": ""
+                    },
+                    "api": {
+                        "name": "shared_"
+                    }
+                }
+            },
             "definition": {
                 "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
-                "contentVersion": "undefined",
+                "contentVersion": "1.0.0.0",
                 "parameters": {
-                    "$authentication": {
-                        "defaultValue": {},
-                        "type": "SecureObject"
-                    },
                     "$connections": {
                         "defaultValue": {},
                         "type": "Object"
+                    },
+                    "$authentication": {
+                        "defaultValue": {},
+                        "type": "SecureObject"
                     }
                 },
-                "triggers": {},
-                "actions": {}
+                "triggers": {
+                    "manual": {
+                        "metadata": {
+                            "operationMetadataId": "15e53ec1-fd2b-420b-a5e6-26101e35ebfc"
+                        },
+                        "type": "Request",
+                        "kind": "Button",
+                        "inputs": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {},
+                                "required": []
+                            }
+                        }
+                    }
+                },
+                "actions": {},
+                "templateName": ""
             },
-            "triggerSchema": {
-                "type": "object",
-                "properties": {},
-                "required": []
-            },
-            "state": "Started",
-            "sharingType": "CommonDataService",
-            "plan": "NotSpecified",
-            "connectionReferences": {},
-            "flowSuspensionReason": "None",
-            "environment": {
-                "name": "<environmentId>",
-                "type": "Microsoft.ProcessSimple/environments",
-                "id": "/providers/Microsoft.ProcessSimple/environments/<environmentId>"
-            },
-            "definitionSummary": {
-                "triggers": [],
-                "actions": []
-            },
-            "creator": {
-                "tenantId": "<tenantId>",
-                "objectId": "<userObjectId>",
-                "userId": "<userId>",
-                "userType": "ActiveDirectory"
-            },
-            "workflowEntityId": "<workflowEntityId>",
-            "referencedResources": [],
-            "isManaged": false,
-            "machineDescriptionData": {}
+            "schemaVersion": "1.0.0.0"
         }
     },
     "api": {

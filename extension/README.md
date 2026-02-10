@@ -1,171 +1,86 @@
 # Power Automate Utility
 
-> **125 expression functions** - fully documented, autocompleted, and ready to use in your Logic App and Power Automate workflows.
-
----
-
-## What It Does
-
-Power Automate Utility is a intellisense for Power Automate. Ideal for:
-
-Scratch pad: type complex expressions before coping and pasting back into Power Automate
-Edit Power Automate Definition files: expressions and basic actions
-GitHub agents: skill file for expressions
-
-Works in `.json` files, `.jsonc` files, and **new untitled files** with no extension, ideal for quick copy and pasting in to Power Automate.
-
----
+A VS Code extension providing IntelliSense for Power Automate and Logic App expressions (great for scratch padding expressions to copy/paste into ui), along with the ability to edit cloud flows directly from VS Code via the Dataverse API.
 
 ## Features
 
-### Autocomplete
+### Expression IntelliSense
+- **Auto-complete** for all Power Automate / Logic App expression functions in `.json`, `.jsonc`, and `.txt` files
+- **Hover documentation** showing function signatures, descriptions, and examples
+- **Signature help** displaying parameter info as you type inside function parentheses
+![intellisense](https://powerdevbox.com/images/vsCode/intellisense.gif)
 
-Type `@{` or `@` inside any JSON string value to instantly see all 125 expression functions. Each suggestion includes:
+### Copilot Skill
+- **Skill files** — load custom expression definitions to extend copilot capability
 
-- The function's category (String, Math, Date/Time, etc.)
-- A full parameter list showing required vs. optional parameters
-- Smart snippet insertion with `Tab`-navigable placeholders for required parameters
+### Flow Editing (Dataverse API)
+Edit Power Automate cloud flows directly from VS Code by reading and writing the `clientdata` field of the Dataverse `workflows` table.
 
-```json
-"inputs": "@{"   // <-- type @{ here to see all functions
-```
+![edit flow](https://powerdevbox.com/images/vsCode/editFlow.gif)
 
-`@{` to paste into Power Automate UI input box
-`@` to edit within definition (also if copy and paste but skip @ you can paste into Function editor)
+> **Note:** Only solution-aware flows (flows added to a Solution) are supported. Flows created under "My Flows" outside of a solution are not accessible via this method.
 
-### Hover Documentation
+#### Prerequisites
+- A Power Platform environment with Dataverse
+- A browser for the OAuth2 sign-in prompt
+- The environment URL (e.g. `https://yourorg.crm.dynamics.com`)
+- Your tenant ID (e.g. `contoso.onmicrosoft.com` or a GUID)
 
-Hover over any function name to see a rich documentation popup with:
-
-- Description of what the function does
-- Full syntax block
-- Parameter table with types and descriptions
-- Return type and description
-- Usage examples from the official Microsoft reference
-
-### Signature Help
-
-Type `(` after a function name or `,` between arguments to see:
-
-- The full function signature
-- Which parameter you're currently filling in (highlighted)
-- Type and description for the active parameter
-
-### Action Templates
-
-Type `@@` anywhere in a JSON file to see a list of available action templates from `actions.json`. Start typing after `@@` to filter:
-
-```json
-@@com   // shows Compose, filters as you type
-```
-
-Select an action to insert the full action definition:
-
-```json
-"Compose": {
-    "runAfter": {},
-    "metadata": {
-        "operationMetadataId": "6063a4bc-73b8-4bc2-b84b-d73c4f79c51c"
-    },
-    "type": "Compose",
-    "inputs": ""
-}
-```
-
-The `@@` trigger is replaced with the complete action JSON.
-
----
-
-## Supported Functions - 125 Total
-
-### String (15 functions)
-
-`concat` · `endsWith` · `formatNumber` · `guid` · `indexOf` · `lastIndexOf` · `nthIndexOf` · `replace` · `slice` · `split` · `startsWith` · `substring` · `toLower` · `toUpper` · `trim`
-
-### Collection (13 functions)
-
-`chunk` · `contains` · `empty` · `first` · `intersection` · `join` · `last` · `length` · `reverse` · `skip` · `sort` · `take` · `union`
-
-### Logical Comparison (11 functions)
-
-`and` · `equals` · `greater` · `greaterOrEquals` · `if` · `isFloat` · `isInt` · `less` · `lessOrEquals` · `not` · `or`
-
-### Conversion (23 functions)
-
-`array` · `base64` · `base64ToBinary` · `base64ToString` · `binary` · `bool` · `createArray` · `dataUri` · `dataUriToBinary` · `dataUriToString` · `decimal` · `decodeBase64` · `decodeDataUri` · `decodeUriComponent` · `encodeUriComponent` · `float` · `int` · `json` · `string` · `uriComponent` · `uriComponentToBinary` · `uriComponentToString` · `xml`
-
-### Math (9 functions)
-
-`add` · `div` · `max` · `min` · `mod` · `mul` · `rand` · `range` · `sub`
-
-### Date and Time (22 functions)
-
-`addDays` · `addHours` · `addMinutes` · `addSeconds` · `addToTime` · `convertFromUtc` · `convertTimeZone` · `convertToUtc` · `dateDifference` · `dayOfMonth` · `dayOfWeek` · `dayOfYear` · `formatDateTime` · `getFutureTime` · `getPastTime` · `parseDateTime` · `startOfDay` · `startOfHour` · `startOfMonth` · `subtractFromTime` · `ticks` · `utcNow`
-
-### Workflow (21 functions)
-
-`action` · `actions` · `body` · `formDataMultiValues` · `formDataValue` · `item` · `items` · `iterationIndexes` · `listCallbackUrl` · `multipartBody` · `outputs` · `parameters` · `result` · `trigger` · `triggerBody` · `triggerFormDataMultiValues` · `triggerFormDataValue` · `triggerMultipartBody` · `triggerOutputs` · `variables` · `workflow`
-
-### URI Parsing (6 functions)
-
-`uriHost` · `uriPath` · `uriPathAndQuery` · `uriPort` · `uriQuery` · `uriScheme`
-
-### Manipulation (5 functions)
-
-`addProperty` · `coalesce` · `removeProperty` · `setProperty` · `xpath`
-
----
-
-## Quick Start
-
-1. **Install** the extension from the VS Code Marketplace
-2. **Open** new file - just start typing, no file extension needed
-3. **Type** `@{` inside a string value to see function suggestions
-4. **Select** a function - required parameters are inserted as snippet placeholders
-5. **Press** `Tab` to jump between parameters
-6. **Hover** over any function name to read its full documentation
-7. **Type** `@@` to insert action templates from `actions.json`
-
-Also works in **json files like definition.json** .
-
-## Commands
+#### Commands
 
 | Command | Description |
-|---------|-------------|
-| `Power Automate Utility: Show Function Count` | Display how many expression functions are currently loaded |
-| `Power Automate Utility: View Skill File` | Open the SKILL.md file in a Markdown preview - shows the installed Copilot skill or the bundled source |
-| `Power Automate Utility: Delete Skill File` | Remove the SKILL.md file from the Copilot skills directory and reset the install flag |
+|---|---|
+| `Power Automate Utility: Sign In to Environment` | Prompts for tenant ID and environment URL, then opens a browser for OAuth2 sign-in. Tokens are cached in memory for ~55 minutes. |
+| `Power Automate Utility: List Flows` | Fetches all solution-aware cloud flows from the environment and displays them in a QuickPick. Selecting a flow opens its `clientdata` for editing. |
+| `Power Automate Utility: Open Flow ClientData` | Downloads the `clientdata` JSON for a specific flow and opens it in the editor as a `.clientdata.json` file. |
+| `Power Automate Utility: Update Flow ClientData` | Reads the active `.clientdata.json` file and PATCHes it back to Dataverse. A cloud-upload button also appears in the editor title bar when editing these files. |
 
-### Copilot Skill (SKILL.md)
+#### Workflow
 
-On first activation the extension automatically copies a `SKILL.md` file to `~/.copilot/skills/powerAutomateUtility/SKILL.md`. This file gives GitHub Copilot contextual knowledge of all 125 expression functions so it can assist with Power Automate and Logic App expressions. Use the **View Skill File** command to inspect it or **Delete Skill File** to remove it.
+1. Open the Command Palette (`Ctrl+Shift+P`)
+2. Run **Sign In to Environment** — enter your tenant ID and environment URL, then complete the browser sign-in
+3. Run **List Flows** — pick a flow from the list
+4. The flow's `clientdata` opens as a JSON file in the editor
+5. Make your edits
+6. Run **Update Flow ClientData** (or click the ☁↑ icon in the editor title bar) to save changes back to Dataverse
 
----
+Tip - Use [AutoReview VS Code Extension](https://marketplace.visualstudio.com/items?itemName=PowerDevBox.autoreview-powerautomate) to see diagram view of the flow 
 
-## Requirements
+### Bash Script (Alternative)
 
-- VS Code **1.80.0** or later
-- No additional dependencies - the extension is self-contained
+A standalone bash script is also provided at `scripts/flow-commands.sh` for use outside VS Code. It requires Python 3 and a browser.
 
----
+```bash
+source scripts/flow-commands.sh
 
-## Data Source
+# Sign in (opens browser for OAuth2)
+flow_sign_in "contoso.onmicrosoft.com" "https://yourorg.crm.dynamics.com"
 
-Function definitions are parsed from the official [Microsoft Azure Logic Apps expression functions reference](https://learn.microsoft.com/en-us/azure/logic-apps/workflow-definition-language-functions-reference). The reference file is bundled with the extension and can be replaced with a custom version via the `powerAutomateUtility.referencePath` setting.
+# List all solution-aware flows
+flow_list "https://yourorg.crm.dynamics.com"
 
----
+# Open a flow's clientdata as a JSON file in VS Code
+flow_open "https://yourorg.crm.dynamics.com" "<workflow-guid>"
 
-## Release Notes
+# Update a flow's clientdata from a local file
+flow_update "https://yourorg.crm.dynamics.com" "<workflow-guid>" "myflow.clientdata.json"
+```
 
-### 0.1.0
 
-- Initial release
-- 125 expression functions across 9 categories
-- Autocomplete with snippet parameter placeholders
-- Hover documentation with syntax, parameters, return types, and examples
-- Signature help with active parameter highlighting
-- Support for `.json`, `.jsonc`, and untitled files
+## Admin Commands
 
----
+
+| Command | Description |
+|---|---|
+| `Power Automate Utility: Toggle IntelliSense` | Turns intellisense ON/OFF |
+| `Power Automate Utility: Show Function Count` | Displays the total number of loaded expression functions |
+| `Power Automate Utility: View Skill File` | Opens a skill file for viewing |
+| `Power Automate Utility: Delete Skill File` | Removes a custom skill file |
+
+## Known Limitations
+
+- Only solution-aware cloud flows are supported for flow editing
+- OAuth2 tokens expire after ~60 minutes; re-run **Sign In** to refresh
+- The local callback server uses port 5500 — ensure it is available during sign-in
 
 

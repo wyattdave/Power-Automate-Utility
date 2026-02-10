@@ -23,9 +23,20 @@ function createCompletionProvider(aFunctions) {
                 return aItems;
             }
 
+            // Detect if we are inside a nested expression so the @ can be stripped
+            const bNested = isNestedExpression(sTextBefore);
+            let oReplaceRange = null;
+            if (bNested) {
+                const iLastAt = sTextBefore.lastIndexOf("@");
+                oReplaceRange = new vscode.Range(
+                    oPosition.line, iLastAt,
+                    oPosition.line, oPosition.character
+                );
+            }
+
             for (let i = 0; i < aFunctions.length; i++) {
                 const oFunc = aFunctions[i];
-                const oItem = buildCompletionItem(oFunc, bAfterAt);
+                const oItem = buildCompletionItem(oFunc, bAfterAt, oReplaceRange);
                 aItems.push(oItem);
             }
 
@@ -38,9 +49,10 @@ function createCompletionProvider(aFunctions) {
  * Build a single CompletionItem from a function definition
  * @param {Object} oFunc - function definition object
  * @param {boolean} bAfterAt - whether the trigger was an @ character
+ * @param {vscode.Range|null} oReplaceRange - range including the @ to replace when nested
  * @returns {vscode.CompletionItem}
  */
-function buildCompletionItem(oFunc, bAfterAt) {
+function buildCompletionItem(oFunc, bAfterAt, oReplaceRange) {
     const oItem = new vscode.CompletionItem(
         oFunc.sName,
         vscode.CompletionItemKind.Function
@@ -60,6 +72,12 @@ function buildCompletionItem(oFunc, bAfterAt) {
     // Sort by category then name
     oItem.sortText = oFunc.sCategory + "_" + oFunc.sName;
     oItem.filterText = oFunc.sName;
+
+    // When inside a nested expression, replace from the @ so it is stripped
+    if (oReplaceRange) {
+        oItem.filterText = "@" + oFunc.sName;
+        oItem.range = oReplaceRange;
+    }
 
     return oItem;
 }
@@ -156,6 +174,44 @@ function buildMarkdownDocs(oFunc) {
     }
 
     return oMd;
+}
+
+/**
+ * Determine whether the cursor is inside an already-opened expression.
+ * This is true when an earlier @ has opened parentheses or @{} braces
+ * that have not yet been closed.
+ * @param {string} sTextBefore - text on the line before the cursor
+ * @returns {boolean}
+ */
+function isNestedExpression(sTextBefore) {
+    let sCheck = sTextBefore;
+    // Remove trailing @ (the one that just triggered the completion)
+    if (sCheck.endsWith("@")) {
+        sCheck = sCheck.substring(0, sCheck.length - 1);
+    }
+
+    let iAtIndex = sCheck.indexOf("@");
+    if (iAtIndex === -1) {
+        return false;
+    }
+
+    // Walk from the first @ and track open parens / @{} braces
+    let iParenDepth = 0;
+    let iAtBraceDepth = 0;
+    for (let i = iAtIndex; i < sCheck.length; i++) {
+        if (sCheck[i] === "@" && i + 1 < sCheck.length && sCheck[i + 1] === "{") {
+            iAtBraceDepth++;
+            i++; // skip the {
+        } else if (sCheck[i] === "}" && iAtBraceDepth > 0) {
+            iAtBraceDepth--;
+        } else if (sCheck[i] === "(") {
+            iParenDepth++;
+        } else if (sCheck[i] === ")") {
+            iParenDepth--;
+        }
+    }
+
+    return iParenDepth > 0 || iAtBraceDepth > 0;
 }
 
 /**
