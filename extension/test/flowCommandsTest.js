@@ -1,6 +1,6 @@
 const path = require('path');
 const fs = require('fs');
-const { getEnvListForTenant, addEnvToTenantList, clearEnvListForTenant } = require('../src/flowCommands');
+const { getEnvListForTenant, addEnvToTenantList, clearEnvListForTenant, findConnectionReferences, generateUniqueKey } = require('../src/flowCommands');
 
 // Simple fake context implementing the globalState API used by the extension
 function makeFakeContext() {
@@ -54,6 +54,33 @@ console.log('\n-- Clear env list --');
 clearEnvListForTenant(oContext, sTenant);
 a = getEnvListForTenant(oContext, sTenant);
 assert(Array.isArray(a) && a.length === 0, 'Env list cleared');
+
+console.log('\n-- findConnectionReferences: top level --');
+let oDoc1 = { connectionReferences: { shared_outlook_1: {} } };
+let oFound = findConnectionReferences(oDoc1);
+assert(oFound !== null && oFound.hasOwnProperty('shared_outlook_1'), 'Found top-level connectionReferences');
+
+console.log('\n-- findConnectionReferences: nested --');
+let oDoc2 = { properties: { connectionReferences: { shared_sql_1: {} } } };
+oFound = findConnectionReferences(oDoc2);
+assert(oFound !== null && oFound.hasOwnProperty('shared_sql_1'), 'Found nested connectionReferences');
+
+console.log('\n-- findConnectionReferences: missing --');
+let oDoc3 = { properties: { triggers: {} } };
+oFound = findConnectionReferences(oDoc3);
+assert(oFound === null, 'Returns null when no connectionReferences');
+
+console.log('\n-- generateUniqueKey: empty object --');
+let sKey = generateUniqueKey('shared_outlook', {});
+assert(sKey === 'shared_outlook_1', 'First key should be _1 (got ' + sKey + ')');
+
+console.log('\n-- generateUniqueKey: _1 exists --');
+sKey = generateUniqueKey('shared_outlook', { 'shared_outlook_1': {} });
+assert(sKey === 'shared_outlook_2', 'Should skip to _2 (got ' + sKey + ')');
+
+console.log('\n-- generateUniqueKey: _1 and _2 exist --');
+sKey = generateUniqueKey('shared_outlook', { 'shared_outlook_1': {}, 'shared_outlook_2': {} });
+assert(sKey === 'shared_outlook_3', 'Should skip to _3 (got ' + sKey + ')');
 
 console.log('\n=======================================');
 console.log('Results: ' + iPassed + '/' + iTotal + ' tests passed');

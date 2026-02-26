@@ -275,11 +275,45 @@ function listEnvironmentVariables(sEnvUrl, sToken) {
     });
 }
 
+/**
+ * List connection references from the Dataverse connectionreference table.
+ * @param {string} sEnvUrl - The environment URL
+ * @param {string} sToken - Bearer token
+ * @returns {Promise<Array<{sLogicalName: string, sDisplayName: string, sConnectorId: string, sApiName: string}>>}
+ */
+function listConnectionReferences(sEnvUrl, sToken) {
+    const sRequestUrl = sEnvUrl + "/api/data/v9.2/connectionreferences?$select=connectionreferencelogicalname,connectionreferencedisplayname,connectorid&$orderby=connectionreferencedisplayname%20asc";
+
+    return makeRequest("GET", sRequestUrl, sToken, null).then(function (oResponse) {
+        if (oResponse.iStatusCode !== 200) {
+            throw new Error("Failed to list connection references. HTTP " + oResponse.iStatusCode + ": " + oResponse.sBody);
+        }
+
+        const oData = JSON.parse(oResponse.sBody);
+        const aRefs = oData.value || [];
+
+        return aRefs.map(function (oRef) {
+            const sConnectorId = oRef.connectorid || "";
+            // Extract API name from connector ID (last segment of the path)
+            const aParts = sConnectorId.split("/");
+            const sApiName = aParts[aParts.length - 1] || sConnectorId;
+
+            return {
+                sLogicalName: oRef.connectionreferencelogicalname || "",
+                sDisplayName: oRef.connectionreferencedisplayname || oRef.connectionreferencelogicalname || "Unnamed",
+                sConnectorId: sConnectorId,
+                sApiName: sApiName
+            };
+        });
+    });
+}
+
 module.exports = {
     getToken: getToken,
     clearToken: clearToken,
     listFlows: listFlows,
     getClientData: getClientData,
     updateClientData: updateClientData,
-    listEnvironmentVariables: listEnvironmentVariables
+    listEnvironmentVariables: listEnvironmentVariables,
+    listConnectionReferences: listConnectionReferences
 };

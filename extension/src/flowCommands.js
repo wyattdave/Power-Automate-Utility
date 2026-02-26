@@ -8,7 +8,7 @@ try {
 const path = require("path");
 const fs = require("fs");
 const os = require("os");
-const { getToken, clearToken, listFlows, getClientData, updateClientData, listEnvironmentVariables } = require("./dataverseClient");
+const { getToken, clearToken, listFlows, getClientData, updateClientData, listEnvironmentVariables, listConnectionReferences } = require("./dataverseClient");
 
 /**
  * Prompt the user for the Power Platform environment URL. Shows saved environments for the current tenant if available.
@@ -489,7 +489,171 @@ function registerFlowCommands(oContext) {
     });
     aDisposables.push(oUpdateCmd);
 
+    // ----------------------------------------------------------------
+    // Command: Show Connection References
+    // ----------------------------------------------------------------
+    const oConnRefCmd = vscode.commands.registerCommand("powerAutomateUtility.showConnectionReferences", function () {
+        const sStoredEnv = oContext.globalState.get("flowEnvUrl");
+        const sStoredTenant = oContext.globalState.get("flowTenantId");
+
+        if (!sStoredEnv || !sStoredTenant) {
+            vscode.window.showWarningMessage("No environment configured. Use 'Sign In' or 'List Flows' first.");
+            return;
+        }
+
+        vscode.window.withProgress({
+            location: vscode.ProgressLocation.Notification,
+            title: "Retrieving connection references...",
+            cancellable: false
+        }, function () {
+            return getToken(sStoredEnv, sStoredTenant).then(function (sToken) {
+                return listConnectionReferences(sStoredEnv, sToken);
+            }).then(function (aConnRefs) {
+                if (!aConnRefs || aConnRefs.length === 0) {
+                    vscode.window.showInformationMessage("No connection references found in this environment.");
+                    return;
+                }
+
+                const aItems = aConnRefs.map(function (oRef) {
+                    return {
+                        label: oRef.sDisplayName,
+                        description: oRef.sApiName,
+                        detail: oRef.sLogicalName,
+                        sApiName: oRef.sApiName,
+                        sLogicalName: oRef.sLogicalName
+                    };
+                });
+
+                return vscode.window.showQuickPick(aItems, {
+                    placeHolder: "Select a connection reference to insert",
+                    matchOnDescription: true,
+                    matchOnDetail: true
+                });
+            }).catch(function (oError) {
+                vscode.window.showErrorMessage("Failed to retrieve connection references: " + oError.message);
+            });
+        }).then(function (oSelected) {
+            if (!oSelected) {
+                return;
+            }
+
+            const oEditor = vscode.window.activeTextEditor;
+            if (!oEditor) {
+                vscode.window.showErrorMessage("No active editor. Open a flow file first.");
+                return;
+            }
+
+            const sDocText = oEditor.document.getText();
+            let oDocJson;
+            try {
+                oDocJson = JSON.parse(sDocText);
+            } catch (oParseError) {
+                vscode.window.showErrorMessage("Current file is not valid JSON: " + oParseError.message);
+                return;
+            }
+
+            const sApiName = oSelected.sApiName;
+            const sLogicalName = oSelected.sLogicalName;
+
+            // Build the connection reference object
+            const oNewRef = {
+                "api": {
+                    "name": sApiName
+                },
+                "connection": {
+                    "connectionReferenceLogicalName": sLogicalName
+                },
+                "runtimeSource": "embedded"
+            };
+
+            // Find the connectionReferences object in the document
+            const oConnRefsObj = findConnectionReferences(oDocJson);
+
+            if (oConnRefsObj !== null) {
+                // Generate a unique key
+                const sUniqueKey = generateUniqueKey(sApiName, oConnRefsObj);
+
+                // Add the new reference
+                oConnRefsObj[sUniqueKey] = oNewRef;
+
+                // Rebuild the full JSON and replace the document
+                const sNewText = JSON.stringify(oDocJson, null, 2);
+                const oFullRange = new vscode.Range(
+                    oEditor.document.positionAt(0),
+                    oEditor.document.positionAt(sDocText.length)
+                );
+
+                oEditor.edit(function (oEditBuilder) {
+                    oEditBuilder.replace(oFullRange, sNewText);
+                }).then(function (bSuccess) {
+                    if (bSuccess) {
+                        vscode.window.showInformationMessage("Added connection reference: " + sUniqueKey);
+                    }
+                });
+            } else {
+                // No connectionReferences found, insert at cursor position
+                const sUniqueKey = generateUniqueKey(sApiName, {});
+                const oSnippet = {};
+                oSnippet[sUniqueKey] = oNewRef;
+                const sSnippetText = JSON.stringify(oSnippet, null, 2);
+
+                const oPosition = oEditor.selection.active;
+                oEditor.edit(function (oEditBuilder) {
+                    oEditBuilder.insert(oPosition, sSnippetText);
+                }).then(function (bSuccess) {
+                    if (bSuccess) {
+                        vscode.window.showInformationMessage("Inserted connection reference at cursor: " + sUniqueKey);
+                    }
+                });
+            }
+        });
+    });
+    aDisposables.push(oConnRefCmd);
+
     return aDisposables;
+}
+
+/**
+ * Recursively search a JSON object for a "connectionReferences" property.
+ * @param {object} oObj - The JSON object to search
+ * @returns {object|null} The connectionReferences object, or null if not found
+ */
+function findConnectionReferences(oObj) {
+    if (!oObj || typeof oObj !== "object") {
+        return null;
+    }
+
+    if (oObj.hasOwnProperty("connectionReferences") && typeof oObj.connectionReferences === "object") {
+        return oObj.connectionReferences;
+    }
+
+    const aKeys = Object.keys(oObj);
+    for (let i = 0; i < aKeys.length; i++) {
+        const oResult = findConnectionReferences(oObj[aKeys[i]]);
+        if (oResult !== null) {
+            return oResult;
+        }
+    }
+
+    return null;
+}
+
+/**
+ * Generate a unique key for a connection reference by appending _1, _2, etc.
+ * @param {string} sApiName - The API name (e.g., "shared_outlook")
+ * @param {object} oExisting - The existing connectionReferences object
+ * @returns {string} A unique key like "shared_outlook_1"
+ */
+function generateUniqueKey(sApiName, oExisting) {
+    let iSuffix = 1;
+    let sCandidate = sApiName + "_" + iSuffix;
+
+    while (oExisting.hasOwnProperty(sCandidate)) {
+        iSuffix++;
+        sCandidate = sApiName + "_" + iSuffix;
+    }
+
+    return sCandidate;
 }
 
 module.exports = {
@@ -499,5 +663,7 @@ module.exports = {
     promptForEnvUrl: promptForEnvUrl,
     getEnvListForTenant: getEnvListForTenant,
     addEnvToTenantList: addEnvToTenantList,
-    clearEnvListForTenant: clearEnvListForTenant
+    clearEnvListForTenant: clearEnvListForTenant,
+    findConnectionReferences: findConnectionReferences,
+    generateUniqueKey: generateUniqueKey
 };

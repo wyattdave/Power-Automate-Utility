@@ -2,7 +2,7 @@
   "name": "power-automate-utility",
   "displayName": "Power Automate Utility",
   "description": "IntelliSense for Power Automate and Logic App expressions, either in blank text files to help with UI or custom definition.json files",
-  "version": "1.0.2",
+  "version": "1.0.3",
    "repository": "https://github.com/wyattdave/power-automate-utility",
   "publisher":"PowerDevBox",
   "icon": "icon.png",
@@ -53,6 +53,10 @@
       {
         "command": "powerAutomateUtility.toggleIntellisense",
         "title": "Power Automate Utility: Toggle IntelliSense"
+      },
+      {
+        "command": "powerAutomateUtility.showConnectionReferences",
+        "title": "Power Automate Utility: Show Connection References"
       }
     ],
     "menus": {
