@@ -189,6 +189,15 @@ function activate(oContext) {
         installSkillFile(oContext);
         oContext.globalState.update(sInstallFlagKey, true);
     }
+
+    const sFlowDefInstallFlagKey = "bFlowDefSkillFileInstalled";
+    const bFlowDefIsInstalled = oContext.globalState.get(sFlowDefInstallFlagKey, false);
+    const sFlowDefSkillDestPath = path.join(os.homedir(), ".copilot", "skills", "powerAutomateFlowDefinition", "SKILL.md");
+
+    if (!bFlowDefIsInstalled || !fileExists(sFlowDefSkillDestPath)) {
+        installFlowDefinitionSkillFile(oContext);
+        oContext.globalState.update(sFlowDefInstallFlagKey, true);
+    }
 }
 
 /**
@@ -317,25 +326,64 @@ function installSkillFile(oContext) {
 }
 
 /**
- * Delete the SKILL.md file from the Copilot skills directory and reset the install flag.
+ * Install the flowDefinitionSkill.md file to the Copilot skills directory.
+ * Windows:      %USERPROFILE%/.copilot/skills/powerAutomateFlowDefinition/SKILL.md
+ * macOS / Linux: ~/.copilot/skills/powerAutomateFlowDefinition/SKILL.md
+ * @param {vscode.ExtensionContext} oContext
+ */
+function installFlowDefinitionSkillFile(oContext) {
+    try {
+        const sSourcePath = path.join(oContext.extensionPath, "src", "flowDefinitionSkill.md");
+        if (!fileExists(sSourcePath)) {
+            console.log("Power Automate Utility: flowDefinitionSkill.md not found at " + sSourcePath);
+            return;
+        }
+
+        const sHomeDir = os.homedir();
+        const sDestDir = path.join(sHomeDir, ".copilot", "skills", "powerAutomateFlowDefinition");
+        const sDestPath = path.join(sDestDir, "SKILL.md");
+
+        if (!fs.existsSync(sDestDir)) {
+            fs.mkdirSync(sDestDir, { recursive: true });
+        }
+
+        fs.copyFileSync(sSourcePath, sDestPath);
+        console.log("Power Automate Utility: Installed flow definition SKILL.md to " + sDestPath);
+    } catch (oError) {
+        console.error("Power Automate Utility: Failed to install flow definition SKILL.md - " + oError.message);
+    }
+}
+
+/**
+ * Delete the SKILL.md files from the Copilot skills directory and reset the install flags.
  * @param {vscode.ExtensionContext} oContext
  */
 function deleteSkillFile(oContext) {
     try {
         const sHomeDir = os.homedir();
-        const sExtensionName = "flow-intellisense";
-        const sDestDir = path.join(sHomeDir, ".copilot", "skills", sExtensionName);
-        const sDestPath = path.join(sDestDir, "SKILL.md");
+        let bDeleted = false;
 
-        if (!fileExists(sDestPath)) {
-            vscode.window.showInformationMessage("Power Automate Utility: SKILL.md is not installed");
-            return;
+        const aSkillDirs = [
+            { sDir: "flow-intellisense", sFlagKey: "bSkillFileInstalled" },
+            { sDir: "powerAutomateUtility", sFlagKey: "bSkillFileInstalled" },
+            { sDir: "powerAutomateFlowDefinition", sFlagKey: "bFlowDefSkillFileInstalled" }
+        ];
+
+        for (let i = 0; i < aSkillDirs.length; i++) {
+            const sDestPath = path.join(sHomeDir, ".copilot", "skills", aSkillDirs[i].sDir, "SKILL.md");
+            if (fileExists(sDestPath)) {
+                fs.unlinkSync(sDestPath);
+                oContext.globalState.update(aSkillDirs[i].sFlagKey, false);
+                console.log("Power Automate Utility: Deleted SKILL.md from " + sDestPath);
+                bDeleted = true;
+            }
         }
 
-        fs.unlinkSync(sDestPath);
-        oContext.globalState.update("bSkillFileInstalled", false);
-        console.log("Power Automate Utility: Deleted SKILL.md from " + sDestPath);
-        vscode.window.showInformationMessage("Power Automate Utility: Copilot skill removed from " + sDestPath);
+        if (bDeleted) {
+            vscode.window.showInformationMessage("Power Automate Utility: Copilot skill files removed");
+        } else {
+            vscode.window.showInformationMessage("Power Automate Utility: No SKILL.md files are installed");
+        }
     } catch (oError) {
         console.error("Power Automate Utility: Failed to delete SKILL.md - " + oError.message);
         vscode.window.showErrorMessage("Power Automate Utility: Failed to delete SKILL.md - " + oError.message);

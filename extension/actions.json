@@ -1,17 +1,7 @@
 {
     "flow": {
         "properties": {
-            "connectionReferences": {
-                "shared_": {
-                    "runtimeSource": "invoker",
-                    "connection": {
-                        "connectionReferenceLogicalName": ""
-                    },
-                    "api": {
-                        "name": "shared_"
-                    }
-                }
-            },
+            "connectionReferences": {},
             "definition": {
                 "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
                 "contentVersion": "1.0.0.0",

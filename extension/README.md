@@ -34,6 +34,7 @@ Edit Power Automate cloud flows directly from VS Code by reading and writing the
 | `Power Automate Utility: List Flows` | Fetches all solution-aware cloud flows from the environment and displays them in a QuickPick. Selecting a flow opens its `clientdata` for editing. |
 | `Power Automate Utility: Open Flow ClientData` | Downloads the `clientdata` JSON for a specific flow and opens it in the editor as a `.clientdata.json` file. |
 | `Power Automate Utility: Update Flow ClientData` | Reads the active `.clientdata.json` file and PATCHes it back to Dataverse. A cloud-upload button also appears in the editor title bar when editing these files. |
+| `Power Automate Utility: Show Connection References` | Lists all connection references in the signed-in environment. Select one to insert it into the `connectionReferences` section of the active flow JSON. |
 
 #### Workflow
 
